@@ -2,14 +2,16 @@ import path from 'path';
 import fs from 'fs';
 import assert from 'assert';
 
-const data = fs.readFileSync(path.join(__dirname, './test.txt'), 'utf-8');
-//const data = fs.readFileSync(path.join(__dirname, './data.txt'), 'utf-8');
+//const data = fs.readFileSync(path.join(__dirname, './test.txt'), 'utf-8');
+const data = fs.readFileSync(path.join(__dirname, './data.txt'), 'utf-8');
 
 export class Day7
 {
 	lines: string[] = data.split(/\r?\n/);
 	root: Folder = new Folder("/", undefined);
 	currentFolder: Folder = this.root;
+	part1Total: number = 0;
+	part2Folderist: Array<Folder> = new Array();
 
 	public Run()
 	{
@@ -17,34 +19,63 @@ export class Day7
 
 		this.runCommands();
 
-		this.Part1();
-		this.Part2();
+		this.accSizes(this.root);
 
-//		assert(this.Part1() === 70509);
-//		assert(this.Part2() === 208567);
+//		this.Part1();
+//		this.Part2();
+
+		assert(this.Part1() === 1491614);
+		assert(this.Part2() === 6400111);
 	}
 
 	private Part1(): number
 	{
-		// travers the folder structure and calculate accumulated sizes - finding folders <= 100,000
+		this.part1Rec(this.root);
 
-		this.printFolderSizes(this.root);
+		console.log("Below 100,000 total ", this.part1Total);
 
-		this.accSizes(this.root);
-
-		this.printFolderSizes(this.root);
-
-		return 0;
+		return this.part1Total;
 	}
 
 	private Part2(): number
 	{
+		const remain: number = 30000000 - (70000000 - this.root.totalSizeOfFiles);
+
+		this.part2List(this.root);
+
+		this.part2Folderist.sort((a: Folder, b: Folder) => {return a.totalSizeOfFiles - b.totalSizeOfFiles;});
+
+		for(const f of this.part2Folderist)
+		{
+			if(f.totalSizeOfFiles > remain)
+			{
+				console.log("Dir size to free ", f.totalSizeOfFiles);
+
+				return f.totalSizeOfFiles;
+			}
+		}
+
 		return 0;
+	}
+
+	private part2List(folder: Folder)
+	{
+		this.part2Folderist.push(folder);
+		folder.recurse(this.part2List.bind(this));
+	}
+
+	private part1Rec(folder: Folder)
+	{
+		if(folder.totalSizeOfFiles < 100000)
+		{
+			this.part1Total += folder.totalSizeOfFiles;
+		}
+
+		folder.recurse(this.part1Rec.bind(this));
 	}
 
 	private printFolderSizes(folder: Folder)
 	{
-		console.log("Folder ", folder.name, " - ", folder.totalSizeOfFiles);
 		folder.recurse(this.printFolderSizes.bind(this));
 	}
 
@@ -92,12 +123,10 @@ export class Day7
 	{
 		if(folderName === '/')
 		{
-			console.log("cd /");
 			return this.root;
 		}
 		else if(folderName === '..')
 		{
-			console.log("cd .. to ", this.currentFolder.parent?.name);
 			return this.currentFolder.parent as Folder;
 		}
 
@@ -105,15 +134,12 @@ export class Day7
 		{
 			if(folder.name === folderName)
 			{
-				console.log("cd ", folder.name);
 				return folder;
 			}
 		}
 
 		// Should never get here
 		// Normally we'd assert or handle the error, but since we know our data is always valid, don't bother.
-
-		console.log("ERROR changing to none existant folder!");
 
 		return this.root;
 	}
@@ -150,8 +176,6 @@ class Folder
 	{
 		this.files.push(file);
 		this.totalSizeOfFiles += file.size;
-
-		console.log("Adding file ", file.name, ":", file.size, " to folder ", this.name, " - total folder size ", this.totalSizeOfFiles);
 	}
 
 	addFolder(folder: Folder)
@@ -165,8 +189,8 @@ class Folder
 
 		for(const folder of this.folders)
 		{
-			childrenSizes += folder.totalSizeOfFiles;
 			callback(folder);
+ 			childrenSizes += folder.totalSizeOfFiles;
 		}
 
 		return childrenSizes;
