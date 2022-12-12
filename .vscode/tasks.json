@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"command": "tsc",
+
+	"type": "shell",
+	"presentation": {
+	"reveal": "silent", // Show the output window only if unrecognized errors occur.
+	},
+	// use the standard tsc problem matcher to find compile problems
+	// in the output.
+	"problemMatcher": "$tsc"
+	}
