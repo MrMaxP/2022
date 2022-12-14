@@ -24,7 +24,7 @@ export class Day9
 	{
 		const bound: Bound = this.getBounds();
 		const grid = new Grid(bound);
-		grid.simulate();
+		grid.simulate(this.lines);
 
 		const count: number = grid.countUsed();
 
@@ -45,7 +45,7 @@ export class Day9
 		let x: number = 0;
 		let y: number = 0;
 
-	for(const line of this.lines)
+		for(const line of this.lines)
 		{
 			switch(line.charAt(0))
 			{
@@ -85,8 +85,10 @@ class Bound
 
 class Grid
 {
-	x: number = 0;
-	y: number = 0;
+	xHead: number = 0;
+	yHead: number = 0;
+	xTail: number = 0;
+	yTail: number = 0;
 	w: number = 0;
 	h: number = 0;
 	grid: number[][] = [];
@@ -96,8 +98,8 @@ class Grid
 		this.w = bound.r - bound.l;
 		this.h = bound.t - bound.b;
 
-		this.x = -bound.l;
-		this.y = -bound.b;
+		this.xHead = this.xTail = -bound.l;
+		this.yHead = this.yTail = -bound.b;
 
 		for(let i: number = 0; i < this.h; i++)
 		{
@@ -109,9 +111,52 @@ class Grid
 		}
 	}
 
-	simulate()
+	simulate(lines: string[])
 	{
+		for(const line of lines)
+		{
+			switch(line.charAt(0))
+			{
+				case 'U': this.moveHead(0, Number.parseInt(line.substring(2))); break;
+				case 'D': this.moveHead(0, -Number.parseInt(line.substring(2))); break;
+				case 'L': this.moveHead(-Number.parseInt(line.substring(2)), 0); break;
+				case 'R': this.moveHead(Number.parseInt(line.substring(2)), 0); break;
+			}
+		}
+	}
 
+	moveHead(x: number, y: number)
+	{
+		let loop: number = Math.abs(x + y);
+		let addX: number = x === 0 ? 0 : x > 0 ? 1 : -1;
+		let addY: number = y === 0 ? 0 : y > 0 ? 1 : -1;
+
+		while(loop--)
+		{
+			this.xHead += addX;
+			this.yHead += addY;
+
+			this.moveTail();
+		}
+	}
+
+	moveTail()
+	{
+		const xDiff = this.xHead - this.xTail;
+		const yDiff = this.yHead - this.yTail;
+
+		if(Math.abs(xDiff) <= 1 && Math.abs(yDiff) <= 1)
+		{
+			return;
+		}
+
+		let addX: number = Math.abs(xDiff) <= 1 ? 0 : xDiff > 0 ? 1 : -1;
+		let addY: number = Math.abs(yDiff) <= 1 ? 0 : yDiff > 0 ? 1 : -1;
+
+		this.xTail += addX;
+		this.yTail += addY;
+
+		this.grid[this.yTail][this.xTail]++;
 	}
 
 	countUsed(): number
@@ -120,13 +165,17 @@ class Grid
 
 		for(let x: number = 0; x < this.w; x++)
 		{
+			let line: string = "";
 			for(let y: number = 0; y < this.h; y++)
 			{
 				if(this.grid[y][x] !== 0)
 				{
 					count++;
 				}
+
+				line += this.grid[y][x] === 0 ? '.' : '#';
 			}
+			console.log(line);
 		}
 
 		return count;
