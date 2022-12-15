@@ -2,8 +2,8 @@ import path from 'path';
 import fs from 'fs';
 import assert from 'assert';
 
-const data = fs.readFileSync(path.join(__dirname, './test.txt'), 'utf-8');
-//const data = fs.readFileSync(path.join(__dirname, './data.txt'), 'utf-8');
+//const data = fs.readFileSync(path.join(__dirname, './test.txt'), 'utf-8');
+const data = fs.readFileSync(path.join(__dirname, './data.txt'), 'utf-8');
 
 export class Day10
 {
@@ -13,11 +13,11 @@ export class Day10
 	{
 		console.log("\n--- Day 10: Cathode-Ray Tube ---");
 
-		this.Part1();
-		this.Part2();
+//		this.Part1();
+//		this.Part2();
 
-//		assert(this.Part1() === 16020);
-//		assert(this.Part2() === );
+		assert(this.Part1() === 16020);
+		assert(this.Part2() === 0);
 	}
 
 	private Part1(): number
@@ -30,6 +30,7 @@ export class Day10
 
 	private Part2(): number
 	{
+		console.log("Display-");
 		this.crt();
 
 		return 0;
@@ -44,7 +45,7 @@ export class Day10
 
 		for(let l: number=0; l<6; l++)
 		{
-			scanlines[l] = ".".repeat(40);
+			scanlines[l] = " ".repeat(40);
 		}
 
 		for(const line of this.lines)
@@ -75,15 +76,16 @@ export class Day10
 
 	private checkSprite(cycle: number, X: number, scanlines: string[])
 	{
-		console.log("Cycle ", cycle);
-		console.log("X is ", X);
-		console.log("");
+		const line: number = Math.floor(cycle/40);
+		const pixel: number = cycle%40;
 
-		if(cycle === X || cycle === X - 1 || cycle === X + 1)
+		// console.log("Line ", line);
+		// console.log("Pixel ", pixel);
+		// console.log("X is ", X);
+		// console.log("");
+
+		if(pixel === X || pixel === X + 1 || pixel === X + 2)
 		{
-			const line: number = Math.floor(cycle/40);
-			const pixel: number = cycle%40;
-
 			scanlines[line] = scanlines[line].substring(0, pixel) + '#' + scanlines[line].substring(pixel+1);
 		}
 	}
@@ -113,7 +115,7 @@ export class Day10
 			{
 				const signalStrength: number = X * monitor;
 
-				console.log("Signal strength at ", monitor, "(cycle ", cycle, ") is ", signalStrength);
+//				console.log("Signal strength at ", monitor, "(cycle ", cycle, ") is ", signalStrength);
 
 				signalAcc += signalStrength;
 
