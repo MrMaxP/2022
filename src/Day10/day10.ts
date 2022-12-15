@@ -59,11 +59,11 @@ export class Day10
 				this.checkSprite(cycle, X, scanlines);
 				cycle += 1;
 
-				const split: string[] = line.split(" ");
-				X += Number.parseInt(split[1]);
-
 				this.checkSprite(cycle, X, scanlines);
 				cycle += 1;
+
+				const split: string[] = line.split(" ");
+				X += Number.parseInt(split[1]);
 			}
 		}
 
@@ -79,12 +79,12 @@ export class Day10
 		console.log("X is ", X);
 		console.log("");
 
-		if(cycle - 1 === X || cycle === X || cycle + 1 === X)
+		if(cycle === X || cycle === X - 1 || cycle === X + 1)
 		{
-			const line: number = Math.floor(X/40);
-			const pixel: number = X%40;
+			const line: number = Math.floor(cycle/40);
+			const pixel: number = cycle%40;
 
-			scanlines[line] = scanlines[line].substring(0, pixel) + '#' + scanlines[line].substring(0, pixel+1);
+			scanlines[line] = scanlines[line].substring(0, pixel) + '#' + scanlines[line].substring(pixel+1);
 		}
 	}
 
