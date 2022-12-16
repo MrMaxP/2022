@@ -11,7 +11,7 @@ export class Day12
 
 	public Run()
 	{
-		console.log("\n--- Day 12: ---");
+		console.log("\n--- Day 12: Hill Climbing Algorithm ---");
 
 		this.Part1();
 		this.Part2();
