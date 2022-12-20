@@ -24,8 +24,6 @@ export class Day12
 
 		this.Walk(this.end);
 
-		this.Display();
-
 		console.log("Min moves ", this.minMoves);
 
 		this.Part1();
@@ -87,6 +85,7 @@ export class Day12
 						if(this.minMoves > this.stack.length)
 						{
 							this.minMoves = this.stack.length;
+							this.Display();
 						}
 						return;
 					}
@@ -114,6 +113,7 @@ export class Day12
 	private Display()
 	{
 		let lines: string[] = [];
+		let stack: Array<Pos> = [...this.stack];
 
 		for(let y=0; y<this.height; y++)
 		{
@@ -121,12 +121,21 @@ export class Day12
 			lines[y] = line;
 		}
 
-		let thisPos: Pos | undefined = this.stack.pop();
-		let lastPos: Pos | undefined = undefined;
+		let thisPos: Pos | undefined = stack.pop();
+		let lastPos: Pos = {x:thisPos !== undefined ? thisPos.x : 0, y:thisPos !== undefined ? thisPos.y : 0};
 
-		while((thisPos = this.stack.pop()) !== undefined)
+		while((thisPos = stack.pop()) !== undefined)
 		{
+			if(thisPos.x === lastPos.x && thisPos.y > lastPos.y)
+				lines[thisPos.y] = lines[thisPos.y].substring(0, thisPos.x) + "^" + lines[thisPos.y].substring(thisPos.x+1);
+			else if(thisPos.x === lastPos.x && thisPos.y < lastPos.y)
+				lines[thisPos.y] = lines[thisPos.y].substring(0, thisPos.x) + "v" + lines[thisPos.y].substring(thisPos.x+1);
+			else if(thisPos.y === lastPos.y && thisPos.x > lastPos.x)
+				lines[thisPos.y] = lines[thisPos.y].substring(0, thisPos.x) + ">" + lines[thisPos.y].substring(thisPos.x+1);
+			else if(thisPos.y === lastPos.y && thisPos.x < lastPos.x)
+				lines[thisPos.y] = lines[thisPos.y].substring(0, thisPos.x) + "<" + lines[thisPos.y].substring(thisPos.x+1);
 
+			lastPos = {x:thisPos !== undefined ? thisPos.x : 0, y:thisPos !== undefined ? thisPos.y : 0};
 		}
 
 		for(let y=0; y<this.height; y++)
