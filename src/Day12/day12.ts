@@ -2,8 +2,8 @@ import path from 'path';
 import fs from 'fs';
 import assert from 'assert';
 
-const data = fs.readFileSync(path.join(__dirname, './test.txt'), 'utf-8');
-//const data = fs.readFileSync(path.join(__dirname, './data.txt'), 'utf-8');
+//const data = fs.readFileSync(path.join(__dirname, './test.txt'), 'utf-8');
+const data = fs.readFileSync(path.join(__dirname, './data.txt'), 'utf-8');
 
 export class Day12
 {
@@ -22,14 +22,10 @@ export class Day12
 
 		this.BuildMap();
 
-		this.Walk(this.end);
-
-		console.log("Min moves ", this.minMoves);
-
 		this.Part1();
 		this.Part2();
 
-//		assert(this.Part1() === 70509);
+//		assert(this.Part1() === 2864);
 //		assert(this.Part2() === 208567);
 	}
 
@@ -68,41 +64,101 @@ export class Day12
 
 		this.stack.push(pos);
 
-		for(; thisNode.dir < 4; thisNode.dir++)
+		const dirStack: Array<Node | undefined> = new Array();
+
+		for(let dir: number = 0; dir < 4; dir++)
+		{
+			let dirNode: Node | undefined = this.GetNodeInDir(thisNode, dir);
+			dirStack.push(dirNode);
+		}
+
+		dirStack.sort((a, b) => {
+
+			if(a === undefined && b === undefined)
+			{
+				return 0;
+			}
+			else if(a === undefined && b !== undefined)
+			{
+				return 1;
+			}
+			else if(a !== undefined && b === undefined)
+			{
+				return -1;
+			}
+			else
+			{
+				// Favour one lower first
+				if(a !== undefined && b !== undefined)
+				{
+					if(a.height === thisNode.height - 1)
+					{
+						return -100;
+					}
+					else if(b.height === thisNode.height - 1)
+					{
+						return 100;
+					}
+
+					return(b as Node).height - (a as Node).height;
+				}
+			}
+
+			return 0;
+		});
+
+		for(const nextNode of dirStack)
 		{
 			thisNode.visited = true;
 
-			let nextNode: Node | undefined = this.GetNodeInDir(thisNode);
-
-			if(nextNode !== undefined)
+			if(nextNode === undefined || nextNode.visited || nextNode.height < thisNode.height - 1)
 			{
-				if(!nextNode.visited && (nextNode.height === thisNode.height-1 || nextNode.height >= thisNode.height))
-				{
-					if(nextNode.pos.x === this.start.x && nextNode.pos.y === this.start.y)
-					{
-						console.log("Found Start after ", this.stack.length, " moves");
+				continue;
+			}
 
-						if(this.minMoves > this.stack.length)
-						{
-							this.minMoves = this.stack.length;
-							this.Display();
-						}
-						return;
+			if(nextNode.height === thisNode.height-1 || nextNode.height >= thisNode.height)
+			{
+				if(nextNode.pos.x === this.start.x && nextNode.pos.y === this.start.y)
+				{
+					this.stack.push(nextNode.pos);
+
+					console.log("Found Start after ", this.stack.length - 1, " moves");
+
+					if(this.minMoves > this.stack.length - 1)
+					{
+						this.minMoves = this.stack.length - 1;
+						this.Display();
 					}
+					return;
+				}
 
 //					console.log("Moving from ", thisNode.pos, " to ", nextNode.pos);
-					this.Walk(nextNode.pos);
+				this.Walk(nextNode.pos);
 //					console.log("Fallback to ", thisNode.pos);
-				}
 			}
 		}
 
-		this.stack.pop();
+		const poppedPos: Pos | undefined = this.stack.pop();
+
+		if(poppedPos !== undefined)
+		{
+			const poppedNode = this.GetNode(poppedPos);
+
+			if(poppedNode !== undefined)
+			{
+				poppedNode.visited = false;
+			}
+		}
+
 	}
 
 	private Part1(): number
 	{
-		return 0;
+		this.Walk(this.end);
+
+		console.log("Min moves ", this.minMoves);
+
+		return this.minMoves;
 	}
 
 	private Part2(): number
@@ -112,30 +168,65 @@ export class Day12
 
 	private Display()
 	{
+		const simple: boolean = true;
+
 		let lines: string[] = [];
 		let stack: Array<Pos> = [...this.stack];
 
 		for(let y=0; y<this.height; y++)
 		{
-			let line: string = ".".repeat(this.width);
+			let line: string = "";
+			for(let x=0; x<this.width; x++)
+			{
+				if(simple)
+				{
+					line += ".";
+				}
+				else
+				{
+					line += " ." + this.map[y][x].height.toString().padStart(2, '0');
+				}
+			}
 			lines[y] = line;
 		}
 
 		let thisPos: Pos | undefined = stack.pop();
-		let lastPos: Pos = {x:thisPos !== undefined ? thisPos.x : 0, y:thisPos !== undefined ? thisPos.y : 0};
+		let nextPos: Pos | undefined = {x:thisPos !== undefined ? thisPos.x : 0, y:thisPos !== undefined ? thisPos.y : 0};
 
-		while((thisPos = stack.pop()) !== undefined)
+		while((nextPos = stack.pop()) !== undefined && thisPos !== undefined)
 		{
-			if(thisPos.x === lastPos.x && thisPos.y > lastPos.y)
-				lines[thisPos.y] = lines[thisPos.y].substring(0, thisPos.x) + "^" + lines[thisPos.y].substring(thisPos.x+1);
-			else if(thisPos.x === lastPos.x && thisPos.y < lastPos.y)
-				lines[thisPos.y] = lines[thisPos.y].substring(0, thisPos.x) + "v" + lines[thisPos.y].substring(thisPos.x+1);
-			else if(thisPos.y === lastPos.y && thisPos.x > lastPos.x)
-				lines[thisPos.y] = lines[thisPos.y].substring(0, thisPos.x) + ">" + lines[thisPos.y].substring(thisPos.x+1);
-			else if(thisPos.y === lastPos.y && thisPos.x < lastPos.x)
-				lines[thisPos.y] = lines[thisPos.y].substring(0, thisPos.x) + "<" + lines[thisPos.y].substring(thisPos.x+1);
+			let x: number = thisPos.x;
+			let y: number = thisPos.y;
 
-			lastPos = {x:thisPos !== undefined ? thisPos.x : 0, y:thisPos !== undefined ? thisPos.y : 0};
+			if(simple)
+			{
+				const p: number = 1;
+
+				if(x === nextPos.x && y > nextPos.y)
+					lines[y] = lines[y].substring(0, x * p) + "^" + lines[y].substring((x+1) * p);
+				else if(x === nextPos.x && y < nextPos.y)
+					lines[y] = lines[y].substring(0, x * p) + "v" + lines[y].substring((x+1) * p);
+				else if(y === nextPos.y && x > nextPos.x)
+					lines[y] = lines[y].substring(0, x * p) + "<" + lines[y].substring((x+1) * p);
+				else if(y === nextPos.y && x < nextPos.x)
+					lines[y] = lines[y].substring(0, x * p) + ">" + lines[y].substring((x+1) * p);
+			}
+			else
+			{
+				const p: number = 4;
+
+				if(x === nextPos.x && y > nextPos.y)
+					lines[y] = lines[y].substring(0, x * p) + " ^" + this.map[y][x].height.toString().padStart(2, '0') + lines[y].substring((x+1) * p);
+				else if(x === nextPos.x && y < nextPos.y)
+					lines[y] = lines[y].substring(0, x * p) + " v" + this.map[y][x].height.toString().padStart(2, '0') + lines[y].substring((x+1) * p);
+				else if(y === nextPos.y && x > nextPos.x)
+					lines[y] = lines[y].substring(0, x * p) + " <" + this.map[y][x].height.toString().padStart(2, '0') + lines[y].substring((x+1) * p);
+				else if(y === nextPos.y && x < nextPos.x)
+					lines[y] = lines[y].substring(0, x * p) + " >" + this.map[y][x].height.toString().padStart(2, '0') + lines[y].substring((x+1) * p);
+			}
+
+
+			thisPos = {x:nextPos !== undefined ? nextPos.x : 0, y:nextPos !== undefined ? nextPos.y : 0};
 		}
 
 		for(let y=0; y<this.height; y++)
@@ -149,10 +240,10 @@ export class Day12
 		return this.map[pos.y][pos.x];
 	}
 
-	private GetNodeInDir(node: Node): Node | undefined
+	private GetNodeInDir(node: Node, dir: number): Node | undefined
 	{
 		let pos: Pos = {x:node.pos.x, y:node.pos.y};
-		switch(node.dir)
+		switch(dir)
 		{
 			case 0:	pos.y--; break;
 			case 1:	pos.x++; break;
@@ -179,7 +270,6 @@ class Pos
 class Node
 {
 	pos: Pos = new Pos();
-	dir: number = 0;
 	paths: boolean[] = [true, true, true, true];
 	height: number = 0;
 	visited: boolean = false;
